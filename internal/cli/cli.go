@@ -17,7 +17,7 @@ type Flags struct {
 }
 
 // This is the function to manage command line arguments
-func Cmd(Arguments []string) Flags {
+func Cli(Arguments []string) Flags {
 
 	var FlagArguments Flags
 
@@ -27,7 +27,7 @@ func Cmd(Arguments []string) Flags {
 		switch flag {
 
 		case "--version", "-v":
-			versionNumber := "v0.4.0"
+			versionNumber := "v0.5.1"
 			fmt.Printf("Version %s", versionNumber)
 			os.Exit(0)
 
@@ -47,6 +47,10 @@ func Cmd(Arguments []string) Flags {
 			aphrodite.PrintInfo("--ignore-file " + "-if\n")
 			fmt.Print("Followed by the exact name to exclude - this can be a partial as long as it's the last part of the file name\neg. README will ignore any file called README, READ would also work, this also works/applies with file extensions\n\n")
 
+			/* 			aphrodite.PrintBold("Cyan", "Include file\n")
+			   			aphrodite.PrintInfo("--include" + "-in\n")
+			   			fmt.Print("Followed by the exact name to include - this can be a partial as long as it's the last part of the file name\neg. README will include any file called README, READ would also work, this also works/applies with file extensions\n\n")
+			*/
 			os.Exit(0)
 
 		case "--ignore", "-i":

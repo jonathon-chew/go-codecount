@@ -1,6 +1,6 @@
-# Lines of Code Analyzer - Ogma
+# Lines of Code Analyzer - codecount
 <p align="center">
-<img width="400" src="doc/images/Ogma.png" alt="Ogma" title="Ogma" />
+<img width="400" src="doc/images/codecount.png" alt="codecount" title="codecount" />
 </p>
 
 A simple Golang-based utility that scans a project directory and reports the number of **files** and **lines of code** for various programming languages.  
@@ -23,26 +23,26 @@ It maps file extensions to languages, counts lines across files, and outputs res
 Clone the repository:
 
 ```bash
-git clone https://github.com/jonathon-chew/Ogma.git
-cd Ogma
+git clone https://github.com/jonathon-chew/codecount.git
+cd codecount
 ```
 
 Build the binary:
 
 ```bash
-go build -o Ogma
+go build -o codecount
 ```
 
 ## 📦 Usage
 
 Run the program in a project directory to analyze code:
 ```bash
-./Ogma
+./codecount
 ```
 
 Optionally, you can pass CLI arguments that will be handled by the cmd package:
 ```bash
-./Ogma <args>
+./codecount <args>
 ```
 
 Version
@@ -126,7 +126,7 @@ cmd – for argument parsing.
 Install them using:
 
 go get github.com/jonathon-chew/Aphrodite
-go get github.com/jonathon-chew/Ogma/cmd
+go get github.com/jonathon-chew/codecount/cmd
 
 ### 🖌️ Attribution
 

@@ -1,4 +1,4 @@
-module github.com/jonathon-chew/Ogma
+module github.com/jonathon-chew/go-codecount
 
 go 1.25.1
 

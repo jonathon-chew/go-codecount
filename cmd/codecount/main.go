@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	cmd "github.com/jonathon-chew/Ogma/cmd"
-	"github.com/jonathon-chew/Ogma/utils"
+	"github.com/jonathon-chew/go-codecount/internal/cli"
+	"github.com/jonathon-chew/go-codecount/internal/utils"
 
 	Aphrodite "github.com/jonathon-chew/Aphrodite"
 )
@@ -167,9 +167,9 @@ func countWords(b []byte) int {
 
 func main() {
 
-	var cmdFlags cmd.Flags
+	var cliFlags cli.Flags
 	if len(os.Args[1:]) >= 1 {
-		cmdFlags = cmd.Cmd(os.Args[1:])
+		cliFlags = cli.Cli(os.Args[1:])
 	}
 
 	root := "./"
@@ -183,13 +183,13 @@ func main() {
 			return err // stop on error
 		}
 
-		for _, ignoreFolder := range cmdFlags.IgnoreFolders {
+		for _, ignoreFolder := range cliFlags.IgnoreFolders {
 			if strings.Contains(path, ignoreFolder+"/") || strings.Contains(path, ignoreFolder+"\\") {
 				return nil
 			}
 		}
 
-		for _, ignoreFile := range cmdFlags.IgnoreFiles {
+		for _, ignoreFile := range cliFlags.IgnoreFiles {
 			if strings.Contains(d.Name(), ignoreFile) {
 				return nil
 			}
@@ -197,7 +197,7 @@ func main() {
 
 		// Pass back a pointer to a file and an error if it fails
 		PointerToFile, OpenFileError := os.Open(path)
-		if OpenFileError != nil && !cmdFlags.IgnoreError {
+		if OpenFileError != nil && !cliFlags.IgnoreError {
 			fmt.Print("error opening the file " + path + "\n")
 			return nil
 		}
