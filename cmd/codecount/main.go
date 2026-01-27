@@ -195,6 +195,17 @@ func main() {
 			}
 		}
 
+		var allowed bool
+		for _, exclusiveFileType := range cliFlags.Exclusive {
+			if strings.Contains(d.Name(), exclusiveFileType) {
+				allowed = true
+			}
+		}
+
+		if !allowed {
+			return nil
+		}
+
 		// Pass back a pointer to a file and an error if it fails
 		PointerToFile, OpenFileError := os.Open(path)
 		if OpenFileError != nil && !cliFlags.IgnoreError {

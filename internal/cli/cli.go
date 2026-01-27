@@ -13,6 +13,7 @@ type Flags struct {
 	IgnoreFolders []string
 	IgnoreFiles   []string
 	IncludeFiles  []string
+	Exclusive     []string
 	IgnoreError   bool
 }
 
@@ -41,11 +42,19 @@ func Cli(Arguments []string) Flags {
 
 			aphrodite.PrintBold("Cyan", "Ignore a folder\n")
 			aphrodite.PrintInfo("--ignore " + "-i \n")
-			fmt.Print("Followed by the exact name to exclude - this can be a partial as long as it's the last part of the folder name\neg. .git will ignore any folders called .git, it would also work\n\n")
+			fmt.Print("Followed by the name to exclude - this can be a partial as long as it's the last part of the folder name\neg. .git will ignore any folders called .git, it would also work\n\n")
 
 			aphrodite.PrintBold("Cyan", "Ignore a file\n")
 			aphrodite.PrintInfo("--ignore-file " + "-if\n")
-			fmt.Print("Followed by the exact name to exclude - this can be a partial as long as it's the last part of the file name\neg. README will ignore any file called README, READ would also work, this also works/applies with file extensions\n\n")
+			fmt.Print("Followed by the name to exclude - this can be a partial as long as it's the last part of the file name\neg. README will ignore any file called README, READ would also work, this also works/applies with file extensions\n\n")
+
+			aphrodite.PrintBold("Cyan", "Include a file\n")
+			aphrodite.PrintInfo("--include " + "-in\n")
+			fmt.Print("Followed by the name to include - this can be a partial as long as it's the last part of the file name\neg. README will ignore any file called README, READ would also work, this also works/applies with file extensions\n\n")
+
+			aphrodite.PrintBold("Cyan", "Exclusive a file name\n")
+			aphrodite.PrintInfo("--exclusive " + "-e\n")
+			fmt.Print("Followed by the name to include - this can be a partial as long as it's the last part of the file name\neg. README will ignore any file called README, READ would also work, this also works/applies with file extensions.\nIf you're looking for file types include the . eg. .go for all go files\n\n")
 
 			/* 			aphrodite.PrintBold("Cyan", "Include file\n")
 			   			aphrodite.PrintInfo("--include" + "-in\n")
@@ -99,6 +108,24 @@ func Cli(Arguments []string) Flags {
 				if !strings.HasPrefix(Arguments[i], "-") {
 					FlagArguments.IgnoreFiles = append(
 						FlagArguments.IgnoreFiles,
+						Arguments[i],
+					)
+					numberOfArguments++
+				} else {
+					break
+				}
+			}
+
+		case "--exclusive", "-e":
+			if numberOfArguments+1 >= len(Arguments) {
+				log.Print("[ERROR]: no file found after -if flag")
+				return FlagArguments
+			}
+
+			for i := numberOfArguments + 1; i < len(Arguments); i++ {
+				if !strings.HasPrefix(Arguments[i], "-") {
+					FlagArguments.Exclusive = append(
+						FlagArguments.Exclusive,
 						Arguments[i],
 					)
 					numberOfArguments++
