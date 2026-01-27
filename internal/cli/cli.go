@@ -79,7 +79,7 @@ func Cli(Arguments []string) Flags {
 
 			for i := numberOfArguments + 1; i < len(Arguments); i++ {
 				if !strings.HasPrefix(Arguments[i], "-") {
-					FlagArguments.IgnoreFiles = append(
+					FlagArguments.IncludeFiles = append(
 						FlagArguments.IncludeFiles,
 						Arguments[i],
 					)
