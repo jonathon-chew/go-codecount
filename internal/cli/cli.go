@@ -118,7 +118,7 @@ func Cli(Arguments []string) Flags {
 
 		case "--exclusive", "-e":
 			if numberOfArguments+1 >= len(Arguments) {
-				log.Print("[ERROR]: no file found after -if flag")
+				log.Print("[ERROR]: no file found after -exclusive flag")
 				return FlagArguments
 			}
 
