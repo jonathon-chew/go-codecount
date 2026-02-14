@@ -201,6 +201,7 @@ func main() {
 			for _, exclusiveFileType := range cliFlags.Exclusive {
 				if strings.Contains(d.Name(), exclusiveFileType) {
 					allowed = true
+					break
 				}
 			}
 
