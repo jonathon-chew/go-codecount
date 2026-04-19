@@ -6,8 +6,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/jonathon-chew/go-codecount/internal/cli"
 	"github.com/jonathon-chew/go-codecount/internal/utils"
@@ -17,6 +19,13 @@ import (
 
 type LanguageStats struct {
 	Files         int
+	Lines         int
+	NonEmptyLines int
+	Words         int
+}
+
+type FileResult struct {
+	Language      string
 	Lines         int
 	NonEmptyLines int
 	Words         int
@@ -99,8 +108,6 @@ var extToLang = map[string]string{
 	"json":  LangJson,
 }
 
-var allowed bool
-
 /*
 Convert a int into a string, but make it human readbale by working backwards and applying commas in the right place to split up the number
 */
@@ -167,6 +174,55 @@ func countWords(b []byte) int {
 	return count
 }
 
+func worker(fileChan <-chan string, resultChan chan<- FileResult, cliFlags cli.Flags) {
+	for path := range fileChan {
+
+		// Open file
+		f, err := os.Open(path)
+		if err != nil {
+			if !cliFlags.IgnoreError {
+				fmt.Println("error opening:", path)
+			}
+			continue
+		}
+
+		var lines, nonEmptyLines, words int
+		scanner := bufio.NewScanner(f)
+
+		for scanner.Scan() {
+			line := scanner.Bytes()
+
+			if len(line) > 0 {
+				nonEmptyLines++
+				words += countWords(line)
+			}
+			lines++
+		}
+
+		f.Close() // ⚠️ no defer in worker loop
+
+		// Extension logic
+		ext := filepath.Ext(path)
+		if strings.HasPrefix(ext, ".") {
+			ext = ext[1:]
+		} else {
+			ext = "Other"
+		}
+
+		lang, ok := extToLang[ext]
+		if !ok {
+			lang = ext
+		}
+
+		resultChan <- FileResult{
+			Language:      lang,
+			Lines:         lines,
+			NonEmptyLines: nonEmptyLines,
+			Words:         words,
+		}
+	}
+}
+
 func main() {
 
 	var cliFlags cli.Flags
@@ -180,98 +236,69 @@ func main() {
 	var totalLines, totalNonEmptyLines, totalFiles, totalWords, biggestLangLength, biggestNumberOfFilesLength, biggestNumberOfNonEmptyLinesLength int
 	var biggestNumberOfWordsLength int = len("No. words:")
 
-	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err // stop on error
-		}
+	fileChan := make(chan string, 100)
+	resultChan := make(chan FileResult, 100)
 
-		for _, ignoreFolder := range cliFlags.IgnoreFolders {
-			if strings.Contains(path, ignoreFolder+"/") || strings.Contains(path, ignoreFolder+"\\") {
-				return nil
+	numWorkers := runtime.NumCPU() * 2 // or runtime.NumCPU()*2
+
+	for i := 0; i < numWorkers; i++ {
+		go worker(fileChan, resultChan, cliFlags)
+	}
+
+	go func() {
+		filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return err // stop on error
 			}
-		}
 
-		for _, ignoreFile := range cliFlags.IgnoreFiles {
-			if strings.Contains(d.Name(), ignoreFile) {
-				return nil
-			}
-		}
-
-		if len(cliFlags.Exclusive) > 0 {
-			for _, exclusiveFileType := range cliFlags.Exclusive {
-				if strings.Contains(d.Name(), exclusiveFileType) {
-					allowed = true
-					break
+			for _, ignoreFolder := range cliFlags.IgnoreFolders {
+				if strings.Contains(path, ignoreFolder+"/") || strings.Contains(path, ignoreFolder+"\\") {
+					return nil
 				}
 			}
 
-			if !allowed {
-				return nil
+			for _, ignoreFile := range cliFlags.IgnoreFiles {
+				if strings.Contains(d.Name(), ignoreFile) {
+					return nil
+				}
 			}
-		}
 
-		// Pass back a pointer to a file and an error if it fails
-		PointerToFile, OpenFileError := os.Open(path)
-		if OpenFileError != nil && !cliFlags.IgnoreError {
-			fmt.Print("error opening the file " + path + "\n")
+			var allowed bool
+			if len(cliFlags.Exclusive) > 0 {
+				for _, exclusiveFileType := range cliFlags.Exclusive {
+					if strings.Contains(d.Name(), exclusiveFileType) {
+						allowed = true
+						break
+					}
+				}
+
+				if !allowed {
+					return nil
+				}
+			}
+
+			fileChan <- path
 			return nil
-		}
+		})
 
-		defer PointerToFile.Close()
+		close(fileChan) // 🚨 important
+	}()
 
-		// Get the stats
-		var nonEmptyLines, lines, words int
-		scanner := bufio.NewScanner(PointerToFile)
-		for scanner.Scan() {
-			line := scanner.Bytes()
+	var wg sync.WaitGroup
 
-			if len(line) > 0 {
-				nonEmptyLines++
-				words += countWords(line)
-			}
+	for range numWorkers {
+		wg.Go(func() {
+			worker(fileChan, resultChan, cliFlags)
+		})
+	}
 
-			lines++
-		}
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
 
-		var fileExtension string = filepath.Ext(d.Name())
-		// Get the file extension
-		if strings.Contains(filepath.Ext(d.Name()), ".") {
-			fileExtension = fileExtension[1:]
-		} else {
-			fileExtension = "Other"
-		}
-
-		// Check if the extension is a known one
-		_, mapContainsKey := extToLang[fileExtension]
-
-		// If the file has an extension AND is a known one
-		if strings.Contains(filepath.Ext(d.Name()), ".") {
-			if mapContainsKey {
-				addToList(stats, lines, nonEmptyLines, words, extToLang[fileExtension])
-			} else {
-				addToList(stats, lines, nonEmptyLines, words, fileExtension)
-			}
-		}
-
-		return nil
-	})
-
-	// Logic for parsing out the contents well
-	// this maybe extracted later for a table implimentation
-
-	for Language, longestLang := range stats {
-		if len(Language) > biggestLangLength {
-			biggestLangLength = len(Language)
-		}
-		if len(HumanReadableInt(longestLang.Files)) > biggestNumberOfFilesLength {
-			biggestNumberOfFilesLength = len(HumanReadableInt(longestLang.Files))
-		}
-		if len(HumanReadableInt(longestLang.Words)) > biggestNumberOfWordsLength {
-			biggestNumberOfWordsLength = len(HumanReadableInt(longestLang.Words))
-		}
-		if len(HumanReadableInt(longestLang.NonEmptyLines)) > biggestNumberOfNonEmptyLinesLength {
-			biggestNumberOfNonEmptyLinesLength = len(HumanReadableInt(biggestNumberOfNonEmptyLinesLength))
-		}
+	for result := range resultChan {
+		addToList(stats, result.Lines, result.NonEmptyLines, result.Words, result.Language)
 	}
 
 	biggestNumberOfFilesLength = len(HumanReadableInt(biggestNumberOfFilesLength))
