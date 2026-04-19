@@ -99,8 +99,6 @@ var extToLang = map[string]string{
 	"json":  LangJson,
 }
 
-var allowed bool
-
 /*
 Convert a int into a string, but make it human readbale by working backwards and applying commas in the right place to split up the number
 */
@@ -198,6 +196,7 @@ func main() {
 		}
 
 		if len(cliFlags.Exclusive) > 0 {
+			var allowed = false
 			for _, exclusiveFileType := range cliFlags.Exclusive {
 				if strings.Contains(d.Name(), exclusiveFileType) {
 					allowed = true
