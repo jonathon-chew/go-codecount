@@ -4,5 +4,6 @@ codecount
 Performance/*
 codecount.test
 test
+doc/*.md
 
 nomos_rules.json

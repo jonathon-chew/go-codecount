@@ -199,7 +199,7 @@ func worker(fileChan <-chan string, resultChan chan<- FileResult, cliFlags cli.F
 			lines++
 		}
 
-		f.Close() // ⚠️ no defer in worker loop
+		f.Close() // no defer in worker loop
 
 		// Extension logic
 		ext := filepath.Ext(path)
