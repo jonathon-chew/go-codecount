@@ -3,5 +3,7 @@ Archive/*
 codecount
 Performance/*
 codecount.test
+doc/*.md
+test
 
 nomos_rules.json
