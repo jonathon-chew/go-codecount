@@ -1,9 +1,9 @@
-# Lines of Code Analyzer - codecount
+# Lines of Code Analyzer - `go-codecount`
 <p align="center">
 <img width="400" src="doc/images/codecount.png" alt="codecount" title="codecount" />
 </p>
 
-A simple Golang-based utility that scans a project directory and reports the number of **files** and **lines of code** for various programming languages.  
+A simple Go utility that scans a project directory and reports the number of **files** and **lines of code** for various programming languages.
 
 It maps file extensions to languages, counts lines across files, and outputs results in a readable, color-formatted format.
 
@@ -11,10 +11,10 @@ It maps file extensions to languages, counts lines across files, and outputs res
 
 ## 🚀 Features
 
-- Detects and counts lines of code for popular programming languages (Python, JavaScript, Go, Rust, Java, C, C++, TypeScript, etc.).
-- Supports human-readable formatting of numbers (e.g., `1,234`).
-- Uses [Aphrodite](https://github.com/jonathon-chew/Aphrodite) for colorized output.
-- CLI integration via [cmd](https://github.com/jonathon-chew/Omga/cmd).
+- Detects and counts lines of code for popular programming languages such as Python, JavaScript, Go, Rust, Java, C, C++, and TypeScript
+- Supports human-readable formatting of numbers, such as `1,234`
+- Uses [Aphrodite](https://github.com/jonathon-chew/Aphrodite) for colorized output
+- Integrates with the project's command-line handling package
 
 ---
 
@@ -40,7 +40,7 @@ Run the program in a project directory to analyze code:
 ./codecount
 ```
 
-Optionally, you can pass CLI arguments that will be handled by the cmd package:
+Optionally, you can pass CLI arguments that will be handled by the command package:
 ```bash
 ./codecount <args>
 ```
@@ -52,14 +52,14 @@ Help
 --help -h
 
 Ignore a folder
---ignore -i 
-Followed by the exact name to exclude - this can be a partial as long as it's the last part of the folder name
-eg. .git will ignore any folders called .git, it would also work
+--ignore -i
+Followed by the exact name to exclude. This can be a partial match as long as it is the last part of the folder name.
+For example, `.git` will ignore any folder called `.git`.
 
 Ignore a file
 --ignore-file -if
-Followed by the exact name to exclude - this can be a partial as long as it's the last part of the file name
-eg. README will ignore any file called README, READ would also work, this also works/applies with file extensions
+Followed by the exact name to exclude. This can be a partial match as long as it is the last part of the file name.
+For example, `README` will ignore any file called `README`, and the same applies to file extensions.
 
 ## 📊 Example Output
 
