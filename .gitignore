@@ -1,9 +1,13 @@
-Lines_Of_Code
-Archive/*
-codecount
-Performance/*
-codecount.test
-doc/*.md
+# Folders
 test
+Archive/*
+Performance/*
+doc/*.md
 
+# Files
+gcodecount
 nomos_rules.json
+Lines_Of_Code
+codecount
+codecount.test
+
