@@ -56,6 +56,10 @@ func Cli(Arguments []string) Flags {
 			aphrodite.PrintInfo("--exclusive " + "-e\n")
 			fmt.Print("Followed by the name to include - this can be a partial as long as it's the last part of the file name\neg. README will ignore any file called README, READ would also work, this also works/applies with file extensions.\nIf you're looking for file types include the . eg. .go for all go files\n\n")
 
+			aphrodite.PrintBold("Cyan", "Ignore writing errors\n")
+			aphrodite.PrintInfo("--ignore-error" + "-ie\n")
+			fmt.Print("Stop the errors from being written to standard output, this will not printed files that can not be opened or if a file is ended prematurely as the line size excededs the 4mb buffer\n\n")
+
 			/* 			aphrodite.PrintBold("Cyan", "Include file\n")
 			   			aphrodite.PrintInfo("--include" + "-in\n")
 			   			fmt.Print("Followed by the exact name to include - this can be a partial as long as it's the last part of the file name\neg. README will include any file called README, READ would also work, this also works/applies with file extensions\n\n")
