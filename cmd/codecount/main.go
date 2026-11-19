@@ -6,8 +6,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/jonathon-chew/go-codecount/internal/cli"
 	"github.com/jonathon-chew/go-codecount/internal/utils"
@@ -178,82 +180,102 @@ func main() {
 	var totalLines, totalNonEmptyLines, totalFiles, totalWords, biggestLangLength, biggestNumberOfFilesLength, biggestNumberOfNonEmptyLinesLength int
 	var biggestNumberOfWordsLength int = len("No. words:")
 
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	runtime.NumCPU()
+
 	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err // stop on error
 		}
 
-		for _, ignoreFolder := range cliFlags.IgnoreFolders {
-			if strings.Contains(path, ignoreFolder+"/") || strings.Contains(path, ignoreFolder+"\\") {
-				return nil
-			}
-		}
-
-		for _, ignoreFile := range cliFlags.IgnoreFiles {
-			if strings.Contains(d.Name(), ignoreFile) {
-				return nil
-			}
-		}
-
-		if len(cliFlags.Exclusive) > 0 {
-			var allowed = false
-			for _, exclusiveFileType := range cliFlags.Exclusive {
-				if strings.Contains(d.Name(), exclusiveFileType) {
-					allowed = true
-					break
+		wg.Go(func() {
+			for _, ignoreFolder := range cliFlags.IgnoreFolders {
+				if strings.Contains(path, ignoreFolder+"/") || strings.Contains(path, ignoreFolder+"\\") {
+					return
 				}
 			}
 
-			if !allowed {
-				return nil
-			}
-		}
-
-		// Pass back a pointer to a file and an error if it fails
-		PointerToFile, OpenFileError := os.Open(path)
-		if OpenFileError != nil && !cliFlags.IgnoreError {
-			fmt.Print("error opening the file " + path + "\n")
-			return nil
-		}
-
-		defer PointerToFile.Close()
-
-		// Get the stats
-		var nonEmptyLines, lines, words int
-		scanner := bufio.NewScanner(PointerToFile)
-		for scanner.Scan() {
-			line := scanner.Bytes()
-
-			if len(line) > 0 {
-				nonEmptyLines++
-				words += countWords(line)
+			for _, ignoreFile := range cliFlags.IgnoreFiles {
+				if strings.Contains(d.Name(), ignoreFile) {
+					return
+				}
 			}
 
-			lines++
-		}
+			if len(cliFlags.Exclusive) > 0 {
+				var allowed = false
+				for _, exclusiveFileType := range cliFlags.Exclusive {
+					if strings.Contains(d.Name(), exclusiveFileType) {
+						allowed = true
+						break
+					}
+				}
 
-		var fileExtension string = filepath.Ext(d.Name())
-		// Get the file extension
-		if strings.Contains(filepath.Ext(d.Name()), ".") {
-			fileExtension = fileExtension[1:]
-		} else {
-			fileExtension = "Other"
-		}
-
-		// Check if the extension is a known one
-		_, mapContainsKey := extToLang[fileExtension]
-
-		// If the file has an extension AND is a known one
-		if strings.Contains(filepath.Ext(d.Name()), ".") {
-			if mapContainsKey {
-				addToList(stats, lines, nonEmptyLines, words, extToLang[fileExtension])
-			} else {
-				addToList(stats, lines, nonEmptyLines, words, fileExtension)
+				if !allowed {
+					return
+				}
 			}
-		}
+
+			// Pass back a pointer to a file and an error if it fails
+			PointerToFile, OpenFileError := os.Open(path)
+			if OpenFileError != nil && !cliFlags.IgnoreError {
+				fmt.Print("error opening the file " + path + "\n")
+				return
+			} else if OpenFileError != nil {
+				return
+			}
+
+			defer PointerToFile.Close()
+
+			// Get the stats
+			var nonEmptyLines, lines, words int
+			scanner := bufio.NewScanner(PointerToFile)
+			scanner.Buffer(make([]byte, 64*1024), 4*1024*1024)
+			for scanner.Scan() {
+				line := scanner.Bytes()
+
+				if len(line) > 0 {
+					nonEmptyLines++
+					words += countWords(line)
+				}
+
+				lines++
+			}
+
+			if scanner.Err() != nil {
+				if !cliFlags.IgnoreError {
+					Aphrodite.PrintError("[ERROR]: Getting bytes from file " + PointerToFile.Name() + "\n")
+				}
+			}
+
+			// Get the file extension
+			ext := strings.TrimPrefix(filepath.Ext(d.Name()), ".")
+			if ext == "" {
+				ext = "Other"
+			}
+
+			// Check if the extension is a known one
+			_, mapContainsKey := extToLang[ext]
+
+			// If the file has an extension AND is a known one
+			if strings.Contains(filepath.Ext(d.Name()), ".") {
+				if mapContainsKey {
+					mu.Lock()
+					addToList(stats, lines, nonEmptyLines, words, extToLang[ext])
+					mu.Unlock()
+				} else {
+					mu.Lock()
+					addToList(stats, lines, nonEmptyLines, words, ext)
+					mu.Unlock()
+				}
+			}
+		})
 
 		return nil
 	})
+
+	wg.Wait()
 
 	// Logic for parsing out the contents well
 	// this maybe extracted later for a table implimentation
